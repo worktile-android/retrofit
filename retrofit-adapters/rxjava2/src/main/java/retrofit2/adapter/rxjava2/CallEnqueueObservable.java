@@ -15,6 +15,7 @@
  */
 package retrofit2.adapter.rxjava2;
 
+import com.worktile.retrofit.adapter.NetworkThrowable;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -61,14 +62,15 @@ final class CallEnqueueObservable<T> extends Observable<Response<T>> {
           observer.onComplete();
         }
       } catch (Throwable t) {
+        NetworkThrowable nt = new NetworkThrowable(t, call);
         if (terminated) {
-          RxJavaPlugins.onError(t);
+          RxJavaPlugins.onError(nt);
         } else if (!call.isCanceled()) {
           try {
-            observer.onError(t);
+            observer.onError(nt);
           } catch (Throwable inner) {
             Exceptions.throwIfFatal(inner);
-            RxJavaPlugins.onError(new CompositeException(t, inner));
+            RxJavaPlugins.onError(new CompositeException(nt, inner));
           }
         }
       }
@@ -77,11 +79,12 @@ final class CallEnqueueObservable<T> extends Observable<Response<T>> {
     @Override public void onFailure(Call<T> call, Throwable t) {
       if (call.isCanceled()) return;
 
+      NetworkThrowable nt = new NetworkThrowable(t, call);
       try {
-        observer.onError(t);
+        observer.onError(nt);
       } catch (Throwable inner) {
         Exceptions.throwIfFatal(inner);
-        RxJavaPlugins.onError(new CompositeException(t, inner));
+        RxJavaPlugins.onError(new CompositeException(nt, inner));
       }
     }
 
